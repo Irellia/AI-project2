@@ -1,17 +1,24 @@
-from _404NotFound_.search.PriorityQueue import *
+"""
+The A* Search algorithm will try to fit all white tokens to the given destinations.
+"""
+from _404NotFound_.algorithm.PriorityQueue import *
 
 class Node:
     
-    def __init__(self, prev):
+    def __init__(self, prev, cost):
         self.prev = prev
+        self.cost = cost
 
     def cameFrom(self):
         return self.prev
 
-    def neighbours(self):
+    def priority(self):
+        return self.heuristic() + self.cost
+
+    def heuristic(self):
         pass
 
-    def priority(self):
+    def neighbours(self):
         pass
 
     def __hash__(self):
@@ -27,7 +34,7 @@ class Node:
         pass
 
 
-
+# Let's start to do AStar
 def AStarSearch(start, goal_test):
 
     closedVertices = []
@@ -35,7 +42,7 @@ def AStarSearch(start, goal_test):
 
     openVertices.push(hash(start), start)
 
-    while openVertices:
+    while not openVertices.empty():
         # Get the vertex in the open list with the lowest F score
         current = openVertices.pop()
 
@@ -47,7 +54,7 @@ def AStarSearch(start, goal_test):
                 current = current.cameFrom()
                 path.append(current)
             path.reverse()
-            return path  # Done!
+            return path     # Done!
 
         closedVertices.append(current)
 
@@ -65,4 +72,4 @@ def AStarSearch(start, goal_test):
             elif openVertices.get(hashKey).priority() < neighbour.priority():
                 openVertices.change(hashKey, neighbour)
 
-    raise RuntimeError("A* failed to find a solution")
+    return []

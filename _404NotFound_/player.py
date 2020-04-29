@@ -1,3 +1,4 @@
+from _404NotFound_.search.board import *
 
 class ExamplePlayer:
     def __init__(self, colour):
@@ -12,6 +13,8 @@ class ExamplePlayer:
         strings "white" or "black" correspondingly.
         """
         # TODO: Set up state representation.
+        self.colour = colour
+        board = Board()
 
 
     def action(self):
