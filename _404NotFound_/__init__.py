@@ -5,4 +5,7 @@
 # example import below, you can define it in another file and import
 # it into this module with the name 'Player':
 
-from your_team_name.player import ExamplePlayer as Player
+from _404NotFound_.player import ExamplePlayer as Player
+
+if __name__ == "__main__":
+    player = Player('White')

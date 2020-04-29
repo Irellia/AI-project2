@@ -15,6 +15,8 @@ class ExamplePlayer:
         # TODO: Set up state representation.
         self.colour = colour
         board = Board()
+        board.read("init_state.json")
+        board.print()
 
 
     def action(self):
