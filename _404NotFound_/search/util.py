@@ -151,36 +151,30 @@ def print_board(board_dict, message="", unicode=False, compact=True, **kwargs):
     print(template.format(message, *cells), **kwargs)
 
 
-#
-def print_dict(dictionary):
-    print("\n########################################################")
-    for i in dictionary:
-        print("起炸点"+str(i) + ":", dictionary[i])
-    print("########################################################\n")
+def expand_nodes(path):
+    return [i[0] for i in path for j in range(i[1])]
 
 
-def any_lst1_in_lst2(lst1, lst2):
+# Output the result as required
+def get_output(path, target):
+    current = expand_nodes(path[0].white)
+    for i in range(1, len(path)):
+        next_path = expand_nodes(path[i].white)
+        diff = setdiff(current, next_path)
+        print_move(diff[0], diff[1].x, diff[1].y, diff[2].x, diff[2].y)
+        current = expand_nodes(path[i].white)
+    print_boom(target.x, target.y)
+
+
+# set difference between two lists, return the length of how many different items between the two lists.
+# This function will be used to extract the path in AStar search. Each path only only one stack.
+# So just need to return the first item of the remaining element in list1 and list2 wil give the "from" and "to"
+def setdiff(lst1, lst2):
+    lst1_copy = [i for i in lst1]
+    lst2_copy = [i for i in lst2]
     for i in lst1:
-        if i in lst2:
-            return True
-    return False
+        if i in lst2_copy:
+            lst1_copy.remove(i)
+            lst2_copy.remove(i)
+    return len(lst1_copy), lst1_copy[0], lst2_copy[0]
 
-
-def all_lst1_in_lst2(lst1, lst2):
-    for i in lst1:
-        if i not in lst2:
-            return False
-    return True
-
-
-def setdiff_between_lists(lst1, lst2):
-    for i in lst1:
-        if i in lst2:
-            lst1[lst1.index(i)][0] = (lst1[lst1.index(i)][0]-1, lst1[lst1.index(i)][1], lst1[lst1.index(i)][2])
-            if lst1[lst1.index(i)][0] < 1:
-                lst1.remove(lst1[lst1.index(i)][0])
-            lst2.remove(i)
-
-
-def size_tokens(tokens):
-    return sum([tokens[i] for i in tokens])
