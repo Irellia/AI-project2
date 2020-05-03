@@ -3,6 +3,19 @@ This module contains some helper functions for printing actions and boards.
 Feel free to use and/or modify them to help you develop your program.
 """
 
+import numpy as np
+
+def random_choose(data):
+    return data[np.random.choice(len(data))]
+
+def sizeof_cells(cells):
+    return sum([cell.num for cell in cells])
+
+def n_duplicate_elements(element, n):
+    return [element for _ in range(n)]
+
+
+
 def print_move(n, x_a, y_a, x_b, y_b, **kwargs):
     """
     Output a move action of n pieces from square (x_a, y_a)

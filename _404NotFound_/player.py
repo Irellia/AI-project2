@@ -1,4 +1,5 @@
 from _404NotFound_.search.board import *
+from _404NotFound_.search.locator import *
 
 class ExamplePlayer:
     def __init__(self, colour):
@@ -13,10 +14,12 @@ class ExamplePlayer:
         strings "white" or "black" correspondingly.
         """
         # TODO: Set up state representation.
-        self.colour = colour
-        board = Board()
-        board.read("init_state.json")
-        board.print()
+        self.board = Board(colour)
+        self.board.read("init_state.json")
+        self.locator = Locator(self.board)
+
+        self.board.print()
+        my_cells = self.board.get_my_cells()
 
 
     def action(self):
@@ -29,6 +32,7 @@ class ExamplePlayer:
         represented based on the spec's instructions for representing actions.
         """
         # TODO: Decide what action to take, and return it
+
         return ("BOOM", (0, 0))
 
 

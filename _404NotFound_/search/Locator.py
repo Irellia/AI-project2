@@ -2,16 +2,24 @@
 
 import itertools
 
-from search.board import *
+from _404NotFound_.search.board import *
 
 
 class Locator:
 
     def __init__(self, board):
         self.board = board
-        self.white = board.get_white()
-        self.black = board.get_black()
         self.boom_dict = self.__create_boom_dict()
+
+    def update(self, board):
+        self.board = board
+
+    def minimax(self, colour):
+        my_cells = self.board.get_my_cells()
+        for cell in my_cells:
+            for stack in range(cell[1]):
+                if colour == self.board.colour:
+                    max_eval = - 100
 
     def __no_equal_set(self, sets):
         for i, set in enumerate(sets):
@@ -36,9 +44,9 @@ class Locator:
         for x in range(BOARD_LEN):
             for y in range(BOARD_LEN):
                 pos = Pos(x, y)
-                if self.board.get_p(pos).chess == Chess.black:
+                if self.board.get_p(pos).chess == self.board.colour_opp:
                     continue
-                boom_set = self.board.get_boom(pos, True)
+                boom_set = self.board.get_boom(pos)
                 if boom_set:
                     boom_dict[pos] = boom_set
         return boom_dict

@@ -84,12 +84,15 @@ class Cell:
 class Board:
 
     def __init__(self):
-        self.cells = []               
+        self.cells = []
+        self.new_board()
+        self.pos_dict = {}
+        self.new_pos_dict()
 
     # Preprocess the data provided and parse it into Board
-    def read(self, filename):
+    def new_board(self):
         self.cells = [Cell(i % BOARD_LEN, i // BOARD_LEN) for i in range(BOARD_LEN ** 2)]
-        with open(filename) as file:
+        with open("../init_state.json") as file:
             data = json.load(file)
         for pieces in data["white"]:
             self.get(pieces[1], pieces[2]).num = pieces[0]
@@ -98,6 +101,24 @@ class Board:
             self.get(pieces[1], pieces[2]).num = pieces[0]
             self.get(pieces[1], pieces[2]).chess = Chess.black
         self.__update_zone()
+
+    def new_pos_dict(self):
+        idx = 0
+        for cell in self.cells:
+            self.pos_dict[cell.pos] = idx
+            idx += 1
+
+
+    def is_empty(self):
+        for cell in self.cells:
+            if cell.chess != Chess.none:
+                return False
+        return True
+
+    def is_valid(self):
+        if sizeof_cells(self.get_my_cells()) > 12 or sizeof_cells(self.get_opp_cells()) > 12:
+            return False
+        return True
 
     def copy(self):
         new = Board()
@@ -111,29 +132,47 @@ class Board:
         return self.cells[pos.y * BOARD_LEN + pos.x]
 
     def get_white(self):
-        return [(cell.pos, cell.num) for cell in self.cells if cell.chess == Chess.white]
+        return [cell for cell in self.cells if cell.chess == Chess.white]
 
     def get_black(self):
-        return [(cell.pos, cell.num) for cell in self.cells if cell.chess == Chess.black]
+        return [cell for cell in self.cells if cell.chess == Chess.black]
+
+    def get_cells(self, colour):
+        return [cell for cell in self.cells if cell.chess == colour]
+
+    # Find the cells that each my cell can reach
+    def possible_moves(self, colour):
+        moves = defaultdict()
+        cells = self.get_white() if colour == Chess.white else self.get_black()
+        for cell in cells:
+            moves[cell] = []
+            for neighbour in cell.pos.card_neighbour(cell.num):
+                moves[cell].append(neighbour)
+        return moves
+
+    # # For debug
+    # def print_possible_moves(self):
+    #     p_m = self.possible_moves()
+    #     for i in p_m:
+    #         print(i.pos, i.num, [(j.x, j.y) for j in p_m[i]])
+
+    # def eval(self):
+    #     return sizeof_cells(self.get_my_cells()) - sizeof_cells(self.get_opp_cells())
 
     # Get all points that will be influenced by the boom action
-    def get_boom(self, start, black_only):
+    def get_boom(self, start):
         mark = defaultdict(bool)
         queue = [start]
         boom = set()
-        if not black_only:
-            boom.add(start)
+        boom.add(start)
         while queue:
             pos = queue.pop()
             mark[pos] = True
             for neighbour in Pos(pos.x, pos.y).neighbour():
                 if not mark[neighbour]:
-                    if self.get_p(neighbour).chess == Chess.black:
+                    if self.get_p(neighbour).chess != Chess.none:
                         queue.append(neighbour)
-                        if black_only:
-                            boom.add(neighbour)
-                    if not black_only:
-                        boom.add(neighbour)
+                    boom.add(neighbour)
         return boom
 
     def set_white(self, white):
@@ -146,97 +185,34 @@ class Board:
             cell.num = num
             cell.chess = Chess.white
 
+    def get_eval(self, target, colour):
+        boom = self.get_boom(target)
+        delta = 0
+        for pos in boom:
+            if self.get_p(pos).chess == colour:
+                delta -= 1
+            elif self.get_p(pos).chess != Chess.none:
+                delta += 1
+        return delta
+
+
     def set_boom(self, target):
-        boom = self.get_boom(target, False)
+        boom = self.get_boom(target)
         for pos in boom:
             cell = self.get_p(pos)
             cell.num = 0
             cell.chess = Chess.none
         self.__update_zone()
-    
 
-    def find_route(self, target, ignore =0):
-        board = self
+    def set_move(self, n, _from, _to):
+        _from.num -= n
+        _to.num += n
 
-        class BoardNode(Node):
-            def __init__(self, white, cost, prev):
-                super().__init__(prev, cost)
-                self.white = sorted(white)
-                self.cost = cost
+        _to.chess = _from.chess
+        if _from.num == 0:
+            _from.chess = Chess.none
+        self.__update_zone()
 
-            # If any white token in the same zone as the destination:
-            #   h() = min_manhattan_dist(white in zone) - num(white out of zone)
-            # otherwise:
-            #   h() = sum_manhattan_dist(white out of zone)
-            def heuristic(self):
-                target_zone = board.get_p(target).zone
-                in_score = []
-                out_score = []
-                for pos, num in self.white:
-                    dist = pos.manh_dist(target) * num
-                    if board.get_p(pos).zone == target_zone:
-                        in_score.append(dist)
-                    else:
-                        out_score.append(dist)
-                if in_score:
-                    return min(in_score) - len(out_score)
-                else:
-                    return sum(out_score)
-
-            # Find the neighbours of the position in selected directions
-            def neighbours(self):
-                for selected_pos, _ in self.white:
-                    old = []
-                    new = []
-                    for pos, num in self.white:
-                        if not selected_pos == pos:
-                            old.append((pos, num))
-                        else:
-                            for neighbour in pos.card_neighbour(num):
-                                if board.get_p(neighbour).chess != Chess.black:
-                                    for i in range(num):
-                                        cur = [(neighbour, num - i)]
-                                        if (i != 0):
-                                            cur.append((pos, i))
-                                        new.append(cur)
-                    for new_stacks in new:
-                        res = defaultdict(int)
-                        for pos, num in old:
-                            res[pos] += num
-                        for pos, num in new_stacks:
-                            res[pos] += num
-                        yield BoardNode(res.items(), self.cost + 1, self)
-
-            def __hash__(self):
-                return hash(tuple(self.white))
-
-            def __lt__(self, other):
-                return self.priority() < other.priority()
-
-            def __str__(self):
-                return ','.join(['({}, {})'.format(str(pos), num) for pos, num in self.white]) + str(self.priority())
-
-        # The goal is to find the given destination
-        def goal_test():
-            boom = self.get_boom(target, False)
-
-            def __inner(node):
-                get_target = False
-                in_boom_num = 0
-                for pos, num in node.white:
-                    if pos == target:
-                        get_target = True
-                    if pos in boom:
-                        in_boom_num += num
-                return get_target and in_boom_num <= (ignore + 1)
-
-            return __inner
-
-        path = AStarSearch(BoardNode(board.get_white(), 0, None), goal_test())
-        if path:
-            board.set_white(path[-1].white)
-            board.set_boom(target)
-        return path     # Find the path. Done!
 
     # Helper function to print the board
     def print(self):

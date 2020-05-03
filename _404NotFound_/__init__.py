@@ -9,3 +9,4 @@ from _404NotFound_.player import ExamplePlayer as Player
 
 if __name__ == "__main__":
     player = Player('White')
+    # player.action()
