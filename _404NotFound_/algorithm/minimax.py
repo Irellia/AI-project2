@@ -8,7 +8,7 @@ class MMStage(Enum):
 class Node:
     def __init__(self, state, action=None):
         self.state = state
-        self.acion = action
+        self.action = action
 
     # return a iterable of successor nodes
     def successors(self, minimax_stage):
@@ -53,7 +53,7 @@ def minimax_min(node, a, b, depth):
         return node.evaluation()
     for successor in node.successors(MMStage.min_stage):
         max_value = minimax_max(successor, a, b, depth-1)
-        b = min(a, max_value) if b else max_value
+        b = min(b, max_value) if b else max_value
         if a and b <= a:
             return a
     return b

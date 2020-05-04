@@ -30,14 +30,14 @@ class Board:
     # >0 for white pieces
     # <0 for black pieces
     def __init__(self, reset=False):
-        if reset:
+        if reset: 
             with open("_404NotFound_\env\init_state.json") as file:
                 self.cells = [0 for i in range(BOARD_LEN ** 2)]
                 data = json.load(file)
-                for pieces in data["white"]:
-                    self.cells[pieces[2] * BOARD_LEN + pieces[1]] = pieces[0]
-                for pieces in data["black"]:
-                    self.cells[pieces[2] * BOARD_LEN + pieces[1]] = -pieces[0]
+                for stack in data["white"]:
+                    self.cells[stack[2] * BOARD_LEN + stack[1]] = stack[0]
+                for stack in data["black"]:
+                    self.cells[stack[2] * BOARD_LEN + stack[1]] = -stack[0]
 
     def copy(self):
         new = Board()
@@ -89,20 +89,18 @@ class Board:
 
     # Get the Pos of all pieces that will be influenced by the boom action
     # return {Color.white:[<pieces>], Color.black:[<pieces>]}
-    def get_boom(self, start):
+    def get_boom(self, x, y):
+        boom = []
+        queue = [Pos(x, y)]
         mark = defaultdict(bool)
-        queue = [start]
-        boom = {Color.white: [], Color.black: []}
+        mark[Pos(x, y)] = True
         while queue:
             pos = queue.pop()
-            if self.is_white(pos.x, pos.y):
-                boom[Color.white].append((pos, self.get_num(pos.x, pos.y)))
-            elif self.is_black(pos.x, pos.y):
-                boom[Color.black].append((pos, self.get_num(pos.x, pos.y)))
+            boom.append((pos, self.get_num(pos.x, pos.y)))
             for neighbour in pos.neighbour():
                 if not mark[neighbour]:
                     mark[neighbour] = True
-                    if not self.is_blank(pos.x, pos.y):
+                    if not self.is_blank(neighbour.x, neighbour.y):
                         queue.append(neighbour)
         return boom
 
@@ -122,9 +120,8 @@ class Board:
             _sign = 1 if s.cells[_from.y * BOARD_LEN + _from.x] > 0 else -1
             s.cells[_from.y * BOARD_LEN + _from.x] -= _sign * _n
             s.cells[_to.y * BOARD_LEN + _to.x] += _sign * _n
-        elif action[1] == "BOOM":
-            boom = list(s.get_boom(Pos(action[1][0], action[1][1])).values())
-            for pos, num in (boom[0] + boom[1]):
+        elif action[0] == "BOOM":
+            for pos, num in s.get_boom(action[1][0], action[1][1]):
                 s.cells[pos.y * BOARD_LEN + pos.x] = 0
         return s
 
@@ -133,16 +130,12 @@ class Board:
         pieces = self.get_pieces(color)
         # find possible boom actions
         for pos, num in pieces:
-            boom = self.get_boom(pos)
             # ignore entirely friendly fire
-            if not boom[opposite(color)]:
+            if not [1 for _p in pos.neighbour() if self.is_color(_p.x, _p.y, opposite(color))]:
                 continue
             # generate next state
             a = ("BOOM", (pos.x, pos.y))
-            s = self.copy()
-            boom = list(boom.values())
-            for _p, _n in (boom[0] + boom[1]):
-                s.cells[_p.y * BOARD_LEN + _p.x] = 0
+            s = self.apply_action(a)
             yield (s, a)
         # find possible move actions
         for pos, num in pieces:

@@ -7,5 +7,4 @@
 
 from _404NotFound_.player import Player
 
-if __name__ == "__main__":
-    player = Player('White')
+

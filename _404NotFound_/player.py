@@ -1,5 +1,3 @@
-from functools import reduce
-
 from _404NotFound_.algorithm.minimax import *
 from _404NotFound_.env.board import *
 from _404NotFound_.env.pos import *
@@ -18,9 +16,8 @@ class Player:
         program will play as (White or Black). The value will be one of the 
         strings "white" or "black" correspondingly.
         """
-        self.color = Color.white if colour == "White" else Color.black
+        self.color = Color.white if colour == "white" else Color.black
         self.board = Board(True)
-        self.board.print()
 
     def action(self):
         """
@@ -51,8 +48,8 @@ class Player:
             def evaluation(self):
                 self_pieces = self.state.get_pieces(color)
                 other_pieces = self.state.get_pieces(opposite(color))
-                self_pieces_num = reduce(lambda x, y: x[1]+y[1], self_pieces)
-                other_pieces_num = reduce(lambda x, y: x[1]+y[1], other_pieces)
+                self_pieces_num = sum(stack[1] for stack in self_pieces)
+                other_pieces_num = sum(stack[1] for stack in other_pieces)
 
                 explore_area = set()
                 for pos, num in self_pieces:
@@ -65,7 +62,6 @@ class Player:
                 f2 = float(len(explore_area))/64
 
                 return (f0, f1, f2)
-
         return minimax_decision(Minimax_Node(self.board), 3)
 
 
