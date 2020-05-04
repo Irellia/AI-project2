@@ -1,0 +1,173 @@
+"""
+The board module represents every entity we will have.
+It has 5 classes: Chess, Pos, Cell, Board, BoardNode
+"""
+
+import json
+from enum import Enum
+from collections import defaultdict
+
+from _404NotFound_.env.pos import *
+from _404NotFound_.env.util import *
+
+class Color(Enum):
+    none = 0
+    white = 1
+    black = -1
+
+def opposite(color):
+    if color.value < 0:
+        return Color.white
+    elif color.value > 0:
+        return Color.black
+    return Color.none
+
+class Board:
+    """ constructors """
+    # board representation:
+    # [<int>*64]
+    # =0 for no pieces
+    # >0 for white pieces
+    # <0 for black pieces
+    def __init__(self, reset=False):
+        if reset:
+            with open("_404NotFound_\env\init_state.json") as file:
+                self.cells = [0 for i in range(BOARD_LEN ** 2)]
+                data = json.load(file)
+                for pieces in data["white"]:
+                    self.cells[pieces[2] * BOARD_LEN + pieces[1]] = pieces[0]
+                for pieces in data["black"]:
+                    self.cells[pieces[2] * BOARD_LEN + pieces[1]] = -pieces[0]
+
+    def copy(self):
+        new = Board()
+        new.cells = self.cells.copy()
+        return new
+
+    """ query single cell functions """
+    def is_blank(self, x, y):
+        return self.cells[y * BOARD_LEN +x] == 0
+
+    def is_white(self, x, y):
+        return self.cells[y * BOARD_LEN +x] > 0
+
+    def is_black(self, x, y):
+        return self.cells[y * BOARD_LEN +x] < 0
+
+    def is_color(self, x, y, color):
+        _c = self.cells[y * BOARD_LEN + x]
+        return True if _c  * color.value > 0 else _c == color.value
+
+    def get_color(self, x, y):
+        if self.is_white(x, y):
+            return Color.white
+        elif self.is_black(x, y):
+            return Color.black
+        else:
+            return Color.none
+
+    # stack number
+    def get_num(self, x, y):
+        return abs(self.cells[y * BOARD_LEN +x])
+
+    """ query multiple cells functions """
+
+    # pieces:
+    # (<Pos>, <int> - stack number)
+
+    # list of white pieces
+    def get_white(self):
+        return [(Pos(x, y), self.get_num(x, y)) for x in range(BOARD_LEN) for y in range(BOARD_LEN) if self.is_white(x, y)]
+
+    # list of black pieces
+    def get_black(self):
+        return [(Pos(x, y), self.get_num(x, y)) for x in range(BOARD_LEN) for y in range(BOARD_LEN) if self.is_black(x, y)]
+
+    # list of pieces with given color
+    def get_pieces(self, color):
+        return [(Pos(x, y), self.get_num(x, y)) for x in range(BOARD_LEN) for y in range(BOARD_LEN) if self.is_color(x, y, color)]
+
+    # Get the Pos of all pieces that will be influenced by the boom action
+    # return {Color.white:[<pieces>], Color.black:[<pieces>]}
+    def get_boom(self, start):
+        mark = defaultdict(bool)
+        queue = [start]
+        boom = {Color.white: [], Color.black: []}
+        while queue:
+            pos = queue.pop()
+            if self.is_white(pos.x, pos.y):
+                boom[Color.white].append((pos, self.get_num(pos.x, pos.y)))
+            elif self.is_black(pos.x, pos.y):
+                boom[Color.black].append((pos, self.get_num(pos.x, pos.y)))
+            for neighbour in pos.neighbour():
+                if not mark[neighbour]:
+                    mark[neighbour] = True
+                    if not self.is_blank(pos.x, pos.y):
+                        queue.append(neighbour)
+        return boom
+
+    """ action funcitons
+        action representation:
+        ("MOVE", n, (xa, ya), (xb, yb)) - move
+        ("BOOM", (x, y))                - boom
+    """
+    # return a new borad state
+    # !!! no validation in this fuction
+    def apply_action(self, action):
+        s = self.copy()
+        if action[0] == "MOVE":
+            _n = action[1]
+            _from = Pos(action[2][0], action[2][1]) 
+            _to = Pos(action[3][0], action[3][1])
+            _sign = 1 if s.cells[_from.y * BOARD_LEN + _from.x] > 0 else -1
+            s.cells[_from.y * BOARD_LEN + _from.x] -= _sign * _n
+            s.cells[_to.y * BOARD_LEN + _to.x] += _sign * _n
+        elif action[1] == "BOOM":
+            boom = list(s.get_boom(Pos(action[1][0], action[1][1])).values())
+            for pos, num in (boom[0] + boom[1]):
+                s.cells[pos.y * BOARD_LEN + pos.x] = 0
+        return s
+
+    # return a iterable of (<board>, <action>)
+    def all_possible_states(self, color):
+        pieces = self.get_pieces(color)
+        # find possible boom actions
+        for pos, num in pieces:
+            boom = self.get_boom(pos)
+            # ignore entirely friendly fire
+            if not boom[opposite(color)]:
+                continue
+            # generate next state
+            a = ("BOOM", (pos.x, pos.y))
+            s = self.copy()
+            boom = list(boom.values())
+            for _p, _n in (boom[0] + boom[1]):
+                s.cells[_p.y * BOARD_LEN + _p.x] = 0
+            yield (s, a)
+        # find possible move actions
+        for pos, num in pieces:
+            for _p in pos.card_neighbour(num):
+                # ignore moving onto opposite color pieces
+                if self.get_color(_p.x, _p.y) == opposite(color):
+                    continue
+                # generate next state
+                for _n in range(1 ,num+1):
+                    a = ("MOVE", _n, (pos.x, pos.y), (_p.x, _p.y))
+                    s = self.apply_action(a)
+                    yield (s, a)
+
+
+    """ print functions """
+    def print(self):
+        print_dict = {}
+        for x in range(BOARD_LEN):
+            for y in range(BOARD_LEN):
+                num = self.get_num(x, y)
+                if self.is_white(x, y):
+                    print_dict[(x, y)] = "o" * num if num < 4 else str(num) + "o"
+                elif self.is_black(x, y):
+                    print_dict[(x, y)] = "x" * num if num < 4 else str(num) + "x"
+                else:
+                    print_dict[(x, y)] = ""            
+        print_board(print_dict, "Board status", True)
+
