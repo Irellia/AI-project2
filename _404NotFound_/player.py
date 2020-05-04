@@ -62,7 +62,7 @@ class Player:
                 f2 = float(len(explore_area))/64
 
                 return (f0, f1, f2)
-        return minimax_decision(Minimax_Node(self.board), 3)
+        return minimax_decision(Minimax_Node(self.board), 2)
 
 
     def update(self, colour, action):
@@ -84,4 +84,3 @@ class Player:
         against the game rules).
         """
         self.board = self.board.apply_action(action)
-        self.board.print()
