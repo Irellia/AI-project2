@@ -1,5 +1,4 @@
-from _404NotFound_.search.board import *
-from _404NotFound_.search.locator import *
+from _404NotFound_.play.agent import *
 
 class ExamplePlayer:
     def __init__(self, colour):
@@ -14,12 +13,8 @@ class ExamplePlayer:
         strings "white" or "black" correspondingly.
         """
         # TODO: Set up state representation.
-        self.board = Board(colour)
-        self.board.read("init_state.json")
-        self.locator = Locator(self.board)
-
-        self.board.print()
-        my_cells = self.board.get_my_cells()
+        self.agent = Agent(colour)
+        self.env = Environment(Board(True))
 
 
     def action(self):
@@ -33,7 +28,7 @@ class ExamplePlayer:
         """
         # TODO: Decide what action to take, and return it
 
-        return ("BOOM", (0, 0))
+        return self.agent.move(self.env)
 
 
     def update(self, colour, action):
@@ -55,3 +50,5 @@ class ExamplePlayer:
         against the game rules).
         """
         # TODO: Update state representation in response to action.
+
+        self.env.update(action)

@@ -2,10 +2,12 @@
 The player agent reads the board then make the best move computed by Minimax algorithm
 """
 
-from _404NotFound_.search.board import *
+from _404NotFound_.env.board import *
+from _404NotFound_.algorithm.minimax import *
 import numpy as np
 import csv
 import pickle
+from timeit import default_timer as time
 
 # import tensorflow as tf
 # from tensorflow.compat.v1.nn.rnn_cell import *
@@ -15,10 +17,10 @@ import pickle
 # from tf_agents.trajectories import time_step as ts
 
 class Agent:
-    def __init__(self, lr=0.5, use_minimax=0):
+    def __init__(self, colour, lr=0.5, use_minimax=1):
         self.lr = lr
         self.use_minimax = use_minimax
-        self.colour = Chess.none
+        self.colour = Chess.white if colour == 'White' else Chess.black
         self.history = []
         self.state_values = {}
 
@@ -34,44 +36,50 @@ class Agent:
 
     def move(self, env):
         if self.use_minimax:
-            env.board.copy()
+            return_apply_action(minimax(env.board.copy(), 2, self.colour), env)
         else:
-            cells = env.board.get_cells(self.colour)
-            boom = []
-            for cell in cells:
-                boom.append(env.board.get_eval(cell.pos, self.colour))
-            if max(boom) > 0:
-                point = cells[boom.index(max(boom))].pos
-                env.board.set_boom(point)
-                return "BOOM", point
-            # This simple algorithm only allows pieces to go ahead (since it may be more likely to win)
-            while True:
-                # _from is a cell while _to is a pos
-                _from = random_choose(cells)
-                random_num = np.random.choice(_from.num) + 1
+            return
+            # # Boom if (loss tokens of my_colour) - (loss tokens of opp_colour) > 0
+            # cells = env.board.get_cells(self.colour)
+            # boom = []
+            # for cell in cells:
+            #     boom.append(env.board.get_eval(cell.pos, self.colour))
+            # if max(boom) > 0:
+            #     point = cells[boom.index(max(boom))].pos
+            #     env.board.set_boom(point)
+            #     return "BOOM", point
+            # # This simple algorithm only allows pieces to go ahead (since it may be more likely to win)
+            # # _from is a cell while _to is a pos
+            # moves = env.board.possible_moves(self.colour)
+            # go_ahead_moves = self.go_ahead(moves)
+            # if len(go_ahead_moves) > 0:
+            #     moves = go_ahead_moves
+            #
+            # cells = [i for i in moves]
+            # _from = random_choose(cells)
+            #
+            # random_num = np.random.choice(_from.num) + 1
+            # _to = random_choose(moves[_from])
+            #
+            # env.board.set_move(random_num, _from, env.board.get_p(_to))
+            # # env.board.print()
+            #
+            # return "MOVE", random_num, (_from.pos.x, _from.pos.y), (_to.x, _to.y)
 
-                moves = env.board.possible_moves(self.colour)
-                _to = random_choose(moves[_from])
-
+    def go_ahead(self, possible_moves):
+        go_ahead_moves = {}
+        for _from in possible_moves:
+            for _to in possible_moves[_from]:
+                go_ahead_moves[_from] = []
                 if self.colour == Chess.white:
-                    if _from.pos.y < _to.y:
-                        continue
-                    else:
-                        break
+                    if _from.pos.y > _to.y:
+                        go_ahead_moves[_from].append(_to)
                 else:
                     if _from.pos.y < _to.y:
-                        continue
-                    else:
-                        break
-
-            env.board.set_move(random_num, _from, env.board.get_p(_to))
-            # env.board.print()
-
-            return "MOVE", random_num, (_from.pos.x, _from.pos.y), (_to.x, _to.y)
-
-
-    def minimax(self, env):
-        env.board.possible_moves()
+                        go_ahead_moves[_from].append(_to)
+            if len(go_ahead_moves[_from]) == 0:
+                del go_ahead_moves[_from]
+        return go_ahead_moves
 
     def update_history(self, action):
         self.history.append(action)
@@ -109,6 +117,14 @@ class Environment:
             return True
         else:
             return False
+
+    def update(self, action):
+        _from = Pos(int(action[1][0]), int(action[1][1]))
+        if action[0] == "MOVE":
+            _to = Pos(int(action[2][0]), int(action[2][1]))
+            self.board.set_move(int(action[0]), self.board.get_p(_from), self.board.get_p(_to))
+        else:
+            self.board.set_boom(_from)
 
 
     def reward(self, colour):
@@ -223,11 +239,8 @@ def play_game(p1, p2, env, plot=False):
 
 
 def self_train(instance=5000, save_model=1, filename=""):
-    p1 = Agent()
-    p2 = Agent()
-
-    p1.set_colour(Chess.white)
-    p2.set_colour(Chess.black)
+    p1 = Agent(Chess.white)
+    p2 = Agent(Chess.black)
 
     for t in range(instance):
         if t % 500 == 0:
@@ -255,11 +268,16 @@ def play_with_human(human_first, agent_name="Agents_N_4000_lr=05.pickle"):
 
 
 if __name__ == "__main__":
-    self_train(100000, save_model=1, filename="Agents_N_100000_lr=05.pickle")
-
+    # self_train(4000, save_model=1, filename="Agents_N_4000_lr=05.pickle")
     # play_with_human(1, agent_name="Agents_N_4000_lr=05.pickle")
 
-
+    start = time()
+    board= Board(True)
+    # agent = Agent()
+    # d = board.possible_actions(Chess.white)
+    print_actions([minimax(board, 3, Chess.white)])
+    end = time()
+    print("Time duration", end-start)
 
 
 
