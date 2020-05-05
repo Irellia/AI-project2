@@ -29,6 +29,21 @@ class Pos:
     def manh_dist(self, other):
         return abs(self.x - other.x) + abs(self.y - other.y)
 
+    def __add__(self, other):
+        return Pos(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other):
+        return Pos(self.x - other.x, self.y - other.y)
+
+    def __mul__(self, other):
+        return Pos(self.x * other, self.y * other)
+
+    def __floordiv__(self, other):
+        return Pos(self.x // other, self.y // other)
+
+    def __truediv__(self, other):
+        return Pos(self.x / other, self.y / other)
+
     def __lt__(self, other):
         return (self.x, self.y) < (other.x, other.y)
 

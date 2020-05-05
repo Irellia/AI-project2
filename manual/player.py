@@ -2,7 +2,6 @@ from _404NotFound_.algorithm.minimax import *
 from _404NotFound_.env.board import *
 from _404NotFound_.env.pos import *
 
-from functools import reduce
 
 class Player:
 
@@ -29,46 +28,18 @@ class Player:
         return an allowed action to play on this turn. The action must be
         represented based on the spec's instructions for representing actions.
         """
-        color = self.color
-        class Minimax_Node(Node):
+        example = "'m 1 2 4 3 5 ' - (MOVE, 1, (2, 3), (4, 5))\n'b 1 2' - (BOOM, (1, 2))\n"
+        string = input("input your action:\n" + example)
+        action = self.parse_action(string)
+        if action and self.validate_action(action):
+            return action
+        else:
+            while True:
+                string = input("Invalid move!! try again:\n")
+                action = self.parse_action(string)
+                if action and self.validate_action(action):
+                    return action
 
-            def __init__(self, board, action=None):
-                super().__init__(board, action)
-
-            def successors(self, minimax_stage):
-                if minimax_stage == MMStage.max_stage:
-                    for board, action in self.state.all_possible_states(color):
-                        yield Minimax_Node(board, action)
-                else:
-                    for board, action in self.state.all_possible_states(opposite(color)):
-                        yield Minimax_Node(board, action)
-
-            def cutoff(self):
-                return not self.state.get_white() or not self.state.get_black()
-
-            def evaluation(self):
-                self_pieces = self.state.get_pieces(color)
-                other_pieces = self.state.get_pieces(opposite(color))
-
-                self_pieces_num = sum(stack[1] for stack in self_pieces)
-                other_pieces_num = sum(stack[1] for stack in other_pieces)
-
-                self_pieces_centroid = reduce(lambda x, y: x+y, (stack[0] for stack in self_pieces))/self_pieces_num if self_pieces else Pos(3.5, 3.5)
-                other_pieces_centroid = reduce(lambda x, y: x+y, (stack[0] for stack in other_pieces))/other_pieces_num if other_pieces else Pos(3.5, 3.5)
-
-                explore_area = set()
-                for pos, num in self_pieces:
-                    for _p in pos.card_neighbour(num):
-                        if self.state.get_color(_p.x, _p.y) != opposite(color):
-                            explore_area.add(_p)
-                
-                f0 = self_pieces_num - other_pieces_num
-                f1 = 12 - other_pieces_num
-                f2 = float(len(explore_area))/64
-                f3 = -self_pieces_centroid.manh_dist(other_pieces_centroid)
-
-                return (f0, f1, f2, f3)
-        return minimax_decision(Minimax_Node(self.board), 3)
 
 
     def update(self, colour, action):
@@ -90,3 +61,30 @@ class Player:
         against the game rules).
         """
         self.board = self.board.apply_action(action)
+
+    def parse_action(self, string):       
+        try:
+            inputs = string.split()
+            if inputs[0].lower() == 'm' or inputs[0].lower == 'move':
+                return ("MOVE", int(inputs[1]), (int(inputs[2]), int(inputs[3])), (int(inputs[4]), int(inputs[5])))
+            elif inputs[0].lower() == 'b' or inputs[0].lower == 'boom':
+                return ("BOOM", (int(inputs[1]), int(inputs[2])))
+        except:
+            return None
+
+
+    def validate_action(self, action):
+        if action[0] == "MOVE":
+            _n = action[1]
+            _from = Pos(action[2][0], action[2][1])
+            _to = Pos(action[3][0], action[3][1])
+            if self.board.get_color(_from.x, _from.y) != self.color or self.board.get_color(_to.x, _to.y) == opposite(self.color):
+                return False
+            if self.board.get_num(_from.x, _from.y) < _n or 0 >= _n:
+                return False
+            if _to not in _from.card_neighbour(_n):
+                return False
+        elif action[0] == "BOOM":
+            if self.board.get_color(action[1][0], action[1][1]) != self.color:
+                return False
+        return True

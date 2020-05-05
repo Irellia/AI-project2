@@ -26,21 +26,20 @@ class Node:
         return self.evaluation() < other.evaluation()
 
 def minimax_decision(init_node, depth):
-    max_action = None
-    max_value = None
-    first = True
+    res = None
+    a = None
     for node in init_node.successors(MMStage.max_stage):
-        node_value = minimax_max(node, None, None, depth-1)
-        if first or node_value > max_value:
-            first = False
-            max_value = node_value
-            max_action = node.action
-    return max_action
+        node_value = minimax_min(node, a, None, depth-1)
+        if not a or node_value > a:
+            a = node_value
+            res = node.action
+    return res
 
 def minimax_max(node, a, b, depth):
     if depth == 0 or node.cutoff():
         return node.evaluation()
     for successor in node.successors(MMStage.max_stage):
+        #print(successor.action)
         min_value = minimax_min(successor, a, b, depth-1)
         a = max(a, min_value) if a else min_value
         if b and a >= b:
@@ -52,11 +51,9 @@ def minimax_min(node, a, b, depth):
     if depth == 0 or node.cutoff():
         return node.evaluation()
     for successor in node.successors(MMStage.min_stage):
+        #print(successor.action)
         max_value = minimax_max(successor, a, b, depth-1)
         b = min(b, max_value) if b else max_value
         if a and b <= a:
             return a
     return b
-
-
-
