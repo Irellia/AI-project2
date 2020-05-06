@@ -59,7 +59,7 @@ class Player:
                 explore_area = set()
                 for pos, num in self_pieces:
                     for _p in pos.card_neighbour(num):
-                        if self.state.get_color(_p.x, _p.y) != opposite(color):
+                        if self.state.get_color(_p.x, _p.y) == Color.none:
                             explore_area.add(_p)
                 
                 f0 = self_pieces_num - other_pieces_num
