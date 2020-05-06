@@ -1,5 +1,6 @@
 BOARD_LEN = 8
 
+
 class Pos:
     def __init__(self, x, y):
         self.x = x
