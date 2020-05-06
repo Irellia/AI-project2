@@ -28,6 +28,7 @@ class Player:
         return an allowed action to play on this turn. The action must be
         represented based on the spec's instructions for representing actions.
         """
+        self.board.print()
         example = "'m 1 2 4 3 5 ' - (MOVE, 1, (2, 3), (4, 5))\n'b 1 2' - (BOOM, (1, 2))\n"
         string = input("input your action:\n" + example)
         action = self.parse_action(string)
