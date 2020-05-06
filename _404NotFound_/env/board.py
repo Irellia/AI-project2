@@ -31,7 +31,7 @@ class Board:
     # <0 for black pieces
     def __init__(self, reset=False):
         if reset: 
-            with open("_404NotFound_\env\init_state.json") as file:
+            with open("_404NotFound_/env/init_state.json") as file:
                 self.cells = [0 for i in range(BOARD_LEN ** 2)]
                 data = json.load(file)
                 for stack in data["white"]:
