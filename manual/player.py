@@ -79,10 +79,13 @@ class Player:
             _from = Pos(action[2][0], action[2][1])
             _to = Pos(action[3][0], action[3][1])
             if self.board.get_color(_from.x, _from.y) != self.color or self.board.get_color(_to.x, _to.y) == opposite(self.color):
+                print(1)
                 return False
             if self.board.get_num(_from.x, _from.y) < _n or 0 >= _n:
+                print(2)
                 return False
-            if _to not in _from.card_neighbour(_n):
+            if _to not in _from.card_neighbour(self.board.get_num(_from.x, _from.y)):
+                print(3)
                 return False
         elif action[0] == "BOOM":
             if self.board.get_color(action[1][0], action[1][1]) != self.color:
