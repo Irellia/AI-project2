@@ -18,6 +18,9 @@ class Player:
         """
         self.color = Color.white if colour == "white" else Color.black
         self.board = Board(True)
+        self.lr = 0.5
+        self.history = []
+        self.state_values = {}
 
     def action(self):
         """
@@ -29,7 +32,7 @@ class Player:
         represented based on the spec's instructions for representing actions.
         """
         self.board.print()
-        example = "'m 1 2 4 3 5 ' - (MOVE, 1, (2, 3), (4, 5))\n'b 1 2' - (BOOM, (1, 2))\n"
+        example = "'23,1,45 ' - (MOVE, 1, (2, 3), (4, 5))\n'12' - (BOOM, (1, 2))\n"
         string = input("input your action:\n" + example)
         action = self.parse_action(string)
         if action and self.validate_action(action):
@@ -63,13 +66,26 @@ class Player:
         """
         self.board = self.board.apply_action(action)
 
+    def add_state_value(self, v):
+        pass
+
+    def add_history(self, h):
+        pass
+
+    def reset_history(self):
+        pass
+
+    def update_state_values(self, referee):
+        pass
+
+
     def parse_action(self, string):       
         try:
-            inputs = string.split()
-            if inputs[0].lower() == 'm' or inputs[0].lower == 'move':
-                return ("MOVE", int(inputs[1]), (int(inputs[2]), int(inputs[3])), (int(inputs[4]), int(inputs[5])))
-            elif inputs[0].lower() == 'b' or inputs[0].lower == 'boom':
-                return ("BOOM", (int(inputs[1]), int(inputs[2])))
+            inputs = string.split(",")
+            if len(inputs) == 3:
+                return "MOVE", int(inputs[1]), (int(inputs[0][0]), int(inputs[0][1])), (int(inputs[2][0]), int(inputs[2][1]))
+            elif len(inputs) == 1:
+                return "BOOM", (int(inputs[0][0]), int(inputs[0][1]))
         except:
             return None
 

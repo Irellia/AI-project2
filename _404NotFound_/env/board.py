@@ -30,14 +30,16 @@ class Board:
     # >0 for white pieces
     # <0 for black pieces
     def __init__(self, reset=False):
-        if reset: 
-            with open("_404NotFound_/env/init_state.json") as file:
-                self.cells = [0 for i in range(BOARD_LEN ** 2)]
-                data = json.load(file)
-                for stack in data["white"]:
-                    self.cells[stack[2] * BOARD_LEN + stack[1]] = stack[0]
-                for stack in data["black"]:
-                    self.cells[stack[2] * BOARD_LEN + stack[1]] = -stack[0]
+        if reset:
+            self.cells = [0 for _ in range(BOARD_LEN ** 2)]
+            data = {
+                    "white": [[1,0,0],[1,0,1],[1,1,0],[1,1,1],[1,3,0],[1,3,1],[1,4,0],[1,4,1],[1,6,0],[1,6,1],[1,7,0],[1,7,1]],
+                    "black": [[1,0,6],[1,0,7],[1,1,6],[1,1,7],[1,3,6],[1,3,7],[1,4,6],[1,4,7],[1,6,6],[1,6,7],[1,7,6],[1,7,7]]
+                   }
+            for stack in data["white"]:
+                self.cells[stack[2] * BOARD_LEN + stack[1]] = stack[0]
+            for stack in data["black"]:
+                self.cells[stack[2] * BOARD_LEN + stack[1]] = -stack[0]
 
     def copy(self):
         new = Board()

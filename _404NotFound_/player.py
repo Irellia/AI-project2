@@ -3,6 +3,7 @@ from _404NotFound_.env.board import *
 from _404NotFound_.env.pos import *
 
 from functools import reduce
+import numpy as np
 
 class Player:
 
@@ -44,7 +45,7 @@ class Player:
                         yield Minimax_Node(board, action)
 
             def cutoff(self):
-                return not self.state.get_white() or not self.state.get_black()
+                return not self.state.get_pieces(opposite(color)) and self.state.get_pieces(color)
 
             def evaluation(self):
                 self_pieces = self.state.get_pieces(color)
@@ -61,14 +62,18 @@ class Player:
                     for _p in pos.card_neighbour(num):
                         if self.state.get_color(_p.x, _p.y) == Color.none:
                             explore_area.add(_p)
-                
-                f0 = self_pieces_num - other_pieces_num
-                f1 = 12 - other_pieces_num
-                f2 = float(len(explore_area))/64
-                f3 = -self_pieces_centroid.manh_dist(other_pieces_centroid)
 
-                return (f0, f1, f2, f3)
-        return minimax_decision(Minimax_Node(self.board), 3)
+                f0 = self_pieces_num - other_pieces_num
+                f1 = float(len(explore_area))/64
+                f2 = 12 - other_pieces_num
+                f3 = -len(self_pieces)
+                f4 = -self_pieces_centroid.manh_dist(other_pieces_centroid)
+
+                # output = [f2, f3, f4]
+                # np.random.shuffle(output)
+                # return tuple([f0]+[f1]+output)
+                return f0, f1, f2, f3, f4
+        return minimax_decision(Minimax_Node(self.board), 4)
 
 
     def update(self, colour, action):

@@ -29,6 +29,8 @@ def minimax_decision(init_node, depth):
     res = None
     a = None
     for node in init_node.successors(MMStage.max_stage):
+        if node.cutoff():
+            return node.action
         node_value = minimax_min(node, a, None, depth-1)
         if not a or node_value > a:
             a = node_value
