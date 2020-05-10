@@ -1,15 +1,14 @@
 from _404NotFound_ import player
-from manual import player as human
 from _404NotFound_.env.board import Color
-from _404NotFound_.algorithm.minimax import *
+from manual import player as human
 import pickle
+from timeit import default_timer as time
 
 class Agent(player.Player):
     def __init__(self, color):
         super().__init__(color)
         self.lr = 0.2
         self.history = []
-        self.state_values = {}
 
     def add_state_value(self, v):
         if v[0] not in self.state_values:
@@ -30,19 +29,17 @@ class Agent(player.Player):
             self.state_values[prev] = value
             target = value
         self.reset_history()
+        self.board.__init__(True)
 
 class Referee:
     def __init__(self):
         self.winner = None
-        self.counter = 0
-
-    def update_counter(self):
-        self.counter += 1
+        self.timer = time()
 
     def game_over(self, board):
         white_num = board.get_white()
         black_num = board.get_black()
-        if (not white_num and not black_num) or self.counter > 100:
+        if (not white_num and not black_num) or (time() - self.timer > 80):
             return True
         elif not white_num:
             self.winner = Color.black
@@ -59,7 +56,7 @@ class Referee:
 
 
 def play_game(p1, p2, referee, plot=False):
-    current_player = p1
+    current_player = None
 
     while True:
         current_player = p2 if current_player == p1 else p1
@@ -74,8 +71,6 @@ def play_game(p1, p2, referee, plot=False):
         state = tuple(current_player.board.cells)
         p1.add_history(state)
         p2.add_history(state)
-
-        referee.update_counter()
 
         if not referee.game_over(current_player.board):
             p1.add_state_value((state, 0.5))
@@ -96,13 +91,14 @@ def self_train(instance=5000, filename="", save_model=1):
     p2 = Agent('black')
 
     for t in range(instance):
-        if t % 50 == 0:
+        if t % 10 == 0:
             print(t)
         play_game(p1, p2, Referee())
 
     if save_model:
         with open(filename, 'wb') as f:
-            pickle.dump([p1, p2], f)
+            # pickle.dump([p1, p2], f)
+            pickle.dump([p1.state_values, p2.state_values], f)
 
 def play_with_human(human_first, agent_name="Agents_N_4000_lr=05.pickle"):
     p1, p2 = pickle.load(open(agent_name, "rb"))
@@ -116,10 +112,8 @@ def play_with_human(human_first, agent_name="Agents_N_4000_lr=05.pickle"):
             play_game(p1, h, Referee(), plot=human_first)
 
 if __name__ == "__main__":
-    # p1 = Agent('white'); p2 = Agent('black')
-    # play_game(p1, p2, Referee())
-    # self_train(instance=500, filename="500_lr=02.pickle")
-    p1, p2 = pickle.load(open("5000_lr=02.pickle", "rb"))
-    print(p1.state_values)
-    print(p2.state_values)
+    self_train(instance=100, filename="100_lr=02.pickle")
+    # state_values_1, state_values_2 = pickle.load(open("100_lr=02.pickle", "rb"))
+    # print(state_values_1)
+    # print(state_values_2)
     # print(p1.state_values)
