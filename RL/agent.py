@@ -1,6 +1,7 @@
 from _404NotFound_ import player
 from manual import player as human
 from _404NotFound_.env.board import Color
+from _404NotFound_.algorithm.minimax import *
 import pickle
 
 class Agent(player.Player):
@@ -95,9 +96,7 @@ def self_train(instance=5000, filename="", save_model=1):
     p2 = Agent('black')
 
     for t in range(instance):
-        if t < 5:
-            print(t)
-        elif t % 50 == 0:
+        if t % 50 == 0:
             print(t)
         play_game(p1, p2, Referee())
 
@@ -117,5 +116,10 @@ def play_with_human(human_first, agent_name="Agents_N_4000_lr=05.pickle"):
             play_game(p1, h, Referee(), plot=human_first)
 
 if __name__ == "__main__":
-    # play_game(Agent('white'), Agent('black'), Referee())
-    self_train(instance=500, filename="500_lr=02.pickle")
+    # p1 = Agent('white'); p2 = Agent('black')
+    # play_game(p1, p2, Referee())
+    # self_train(instance=500, filename="500_lr=02.pickle")
+    p1, p2 = pickle.load(open("5000_lr=02.pickle", "rb"))
+    print(p1.state_values)
+    print(p2.state_values)
+    # print(p1.state_values)

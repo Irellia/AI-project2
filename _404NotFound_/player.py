@@ -20,6 +20,7 @@ class Player:
         """
         self.color = Color.white if colour == "white" else Color.black
         self.board = Board(True)
+        self.state_values = None
 
     def action(self):
         """
@@ -73,7 +74,7 @@ class Player:
                 # np.random.shuffle(output)
                 # return tuple([f0]+[f1]+output)
                 return f0, f1, f2, f3, f4
-        return minimax_decision(Minimax_Node(self.board), 4)
+        return minimax_decision(Minimax_Node(self.board), 3, self.state_values)
 
 
     def update(self, colour, action):

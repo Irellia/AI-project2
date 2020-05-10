@@ -25,36 +25,36 @@ class Node:
     def __lt__(self, other):
         return self.evaluation() < other.evaluation()
 
-def minimax_decision(init_node, depth):
+def minimax_decision(init_node, depth, state_values=None):
     res = None
     a = None
     for node in init_node.successors(MMStage.max_stage):
-        if node.cutoff():
+        if node.cutoff() or (tuple(node.state.cells) in state_values and state_values[tuple(node.state.cells)] > 0.5):
             return node.action
-        node_value = minimax_min(node, a, None, depth-1)
+        node_value = minimax_min(node, a, None, depth-1, state_values)
         if not a or node_value > a:
             a = node_value
             res = node.action
     return res
 
-def minimax_max(node, a, b, depth):
-    if depth == 0 or node.cutoff():
+def minimax_max(node, a, b, depth, state_values):
+    if depth == 0 or node.cutoff() or (tuple(node.state.cells) in state_values and state_values[tuple(node.state.cells)] > 0.5):
         return node.evaluation()
     for successor in node.successors(MMStage.max_stage):
         #print(successor.action)
-        min_value = minimax_min(successor, a, b, depth-1)
+        min_value = minimax_min(successor, a, b, depth-1, state_values)
         a = max(a, min_value) if a else min_value
         if b and a >= b:
             return b
     return a
 
 
-def minimax_min(node, a, b, depth):
-    if depth == 0 or node.cutoff():
+def minimax_min(node, a, b, depth, state_values):
+    if depth == 0 or node.cutoff() or (tuple(node.state.cells) in state_values and state_values[tuple(node.state.cells)] > 0.5):
         return node.evaluation()
     for successor in node.successors(MMStage.min_stage):
         #print(successor.action)
-        max_value = minimax_max(successor, a, b, depth-1)
+        max_value = minimax_max(successor, a, b, depth-1, state_values)
         b = min(b, max_value) if b else max_value
         if a and b <= a:
             return a
