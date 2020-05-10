@@ -20,7 +20,7 @@ class Player:
         """
         self.color = Color.white if colour == "white" else Color.black
         self.board = Board(True)
-        self.state_values = None
+        self.state_values = {}
 
     def action(self):
         """
