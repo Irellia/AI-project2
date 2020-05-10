@@ -5,7 +5,7 @@ It has 5 classes: Chess, Pos, Cell, Board, BoardNode
 
 import json
 from enum import Enum
-from collections import defaultdict
+from functools import reduce
 
 from _404NotFound_.env.pos import *
 from _404NotFound_.env.util import *
@@ -35,7 +35,7 @@ class Board:
                 self.cells = [0 for i in range(BOARD_LEN ** 2)]
                 data = json.load(file)
                 for stack in data["white"]:
-                    self.cells[stack[2] * BOARD_LEN + stack[1]] = stack[0]
+                    self.cells[stack[2] * BOARD_LEN + stack[1]] = stack[0]                    
                 for stack in data["black"]:
                     self.cells[stack[2] * BOARD_LEN + stack[1]] = -stack[0]
 
@@ -92,17 +92,45 @@ class Board:
     def get_boom(self, x, y):
         boom = []
         queue = [Pos(x, y)]
-        mark = defaultdict(bool)
-        mark[Pos(x, y)] = True
+        mark = [False for i in range(BOARD_LEN ** 2)]
+        mark[y*BOARD_LEN +x] = True
         while queue:
             pos = queue.pop()
             boom.append((pos, self.get_num(pos.x, pos.y)))
             for neighbour in pos.neighbour():
-                if not mark[neighbour]:
-                    mark[neighbour] = True
+                if not mark[neighbour.y*BOARD_LEN+neighbour.x]:
+                    mark[neighbour.y*BOARD_LEN+neighbour.x] = True
                     if not self.is_blank(neighbour.x, neighbour.y):
                         queue.append(neighbour)
         return boom
+
+    def get_boom_component(self):
+        mark = [False for i in range(BOARD_LEN ** 2)]
+        boom_component = {Color.white:[], Color.black:[]}
+        for x in range(BOARD_LEN):
+            for y in range(BOARD_LEN):
+                if not mark[y*BOARD_LEN+x] and not self.is_blank(x, y):
+                    queue = [Pos(x, y)]
+                    mark[y*BOARD_LEN+x] = True
+                    black = 0
+                    white = 0
+                    while queue:
+                        pos = queue.pop()
+                        if self.get_color(pos.x, pos.y) == Color.white:
+                            black += self.get_num(pos.x, pos.y)
+                        else:
+                            white += self.get_num(pos.x, pos.y)
+
+                        for neighbour in pos.neighbour():
+                            if not mark[neighbour.y*BOARD_LEN+neighbour.x]:
+                                mark[neighbour.y*BOARD_LEN+neighbour.x] = True
+                                if not self.is_blank(neighbour.x, neighbour.y):
+                                    queue.append(neighbour)
+                    if white > 0 and black > 0:
+                        boom_component[Color.white].append(white)
+                        boom_component[Color.black].append(black)
+        return boom_component
+
 
     """ action funcitons
         action representation:
@@ -128,26 +156,32 @@ class Board:
     # return a iterable of (<board>, <action>)
     def all_possible_states(self, color):
         pieces = self.get_pieces(color)
+        other_pieces = self.get_pieces(opposite(color))
+
+        other_pieces_num = sum(stack[1] for stack in other_pieces)
+        other_pieces_centroid = reduce(
+            lambda x, y: x+y, (stack[0] for stack in other_pieces))/other_pieces_num if other_pieces else Pos(3.5, 3.5)
+        #consider the frontier pieces first
+        pieces.sort(key=lambda x: x[0].manh_dist(other_pieces_centroid))
         # find possible boom actions
         for pos, num in pieces:
             # ignore entirely friendly fire
-            if not [1 for _p in pos.neighbour() if self.is_color(_p.x, _p.y, opposite(color))]:
-                continue
-            # generate next state
-            a = ("BOOM", (pos.x, pos.y))
-            s = self.apply_action(a)
-            yield (s, a)
-        # find possible move actions
-        for pos, num in pieces:
+            if [1 for _p in pos.neighbour() if self.is_color(_p.x, _p.y, opposite(color))]:
+                # generate next state
+                a = ("BOOM", (pos.x, pos.y))
+                s = self.apply_action(a)
+                yield (s, a)
+            
+            # find possible move actions
             for _p in pos.card_neighbour(num):
                 # ignore moving onto opposite color pieces
                 if self.get_color(_p.x, _p.y) == opposite(color):
                     continue
                 # generate next state
-                for _n in range(1 ,num+1):
+                for _n in range(1, num+1):
                     a = ("MOVE", _n, (pos.x, pos.y), (_p.x, _p.y))
                     s = self.apply_action(a)
-                    yield (s, a)
+                    yield (s, a)            
 
 
     """ print functions """

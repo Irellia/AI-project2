@@ -44,7 +44,7 @@ class Player:
                         yield Minimax_Node(board, action)
 
             def cutoff(self):
-                return not self.state.get_white() or not self.state.get_black()
+                return not self.state.get_black() or not self.state.get_white()
 
             def evaluation(self):
                 self_pieces = self.state.get_pieces(color)
@@ -54,20 +54,37 @@ class Player:
                 other_pieces_num = sum(stack[1] for stack in other_pieces)
 
                 self_pieces_centroid = reduce(lambda x, y: x+y, (stack[0] for stack in self_pieces))/self_pieces_num if self_pieces else Pos(3.5, 3.5)
-                other_pieces_centroid = reduce(lambda x, y: x+y, (stack[0] for stack in other_pieces))/other_pieces_num if other_pieces else Pos(3.5, 3.5)
+                other_pieces_centroid = reduce(lambda x, y: x+y, (stack[0] for stack in other_pieces))/other_pieces_num if other_pieces else Pos(3.5, 3.5)                
 
                 explore_area = set()
                 for pos, num in self_pieces:
                     for _p in pos.card_neighbour(num):
                         if self.state.get_color(_p.x, _p.y) == Color.none:
                             explore_area.add(_p)
-                
-                f0 = self_pieces_num - other_pieces_num
-                f1 = 12 - other_pieces_num
-                f2 = float(len(explore_area))/64
-                f3 = -self_pieces_centroid.manh_dist(other_pieces_centroid)
 
+                boom_component = self.state.get_boom_component()
+                boom_reward = []
+                boom_penalty = []
+                for i in range(len(boom_component[Color.white])):
+                    delta = self_pieces_num/other_pieces_num * boom_component[opposite(color)][i] - boom_component[color][i]
+                    if delta > 0:
+                        boom_reward.append(delta)
+                    else:
+                        boom_penalty.append(-delta)
+                if not other_pieces_num:
+                    f0 = 999
+                else:
+                    f0 = self_pieces_num + (max(boom_reward) if boom_reward else 0) - \
+                    other_pieces_num - (max(boom_penalty) if boom_penalty else 0)
+                f1 = sum(boom_reward) - sum(boom_penalty)
+                f2 = len(explore_area)
+                f3 = -self_pieces_centroid.manh_dist(other_pieces_centroid)
+                
+                # self.state.print()
+                # print(self.action, (f0, f1, f2, f3, f4))
                 return (f0, f1, f2, f3)
+
+
         return minimax_decision(Minimax_Node(self.board), 3)
 
 
