@@ -71,18 +71,19 @@ class Player:
                         boom_reward.append(delta)
                     else:
                         boom_penalty.append(-delta)
-                if not other_pieces_num:
+                ft = self_pieces_num/other_pieces_num if other_pieces_num != 0 else 999
+                if other_pieces_num - (max(boom_reward) if boom_reward else 0) == 0:
                     f0 = 999
                 else:
-                    f0 = self_pieces_num + (max(boom_reward) if boom_reward else 0) - \
-                    other_pieces_num - (max(boom_penalty) if boom_penalty else 0)
+                    f0 = (self_pieces_num - (max(boom_penalty) if boom_penalty else 0)) /\
+                        (other_pieces_num - (max(boom_reward) if boom_reward else 0))
                 f1 = sum(boom_reward) - sum(boom_penalty)
                 f2 = len(explore_area)
                 f3 = -self_pieces_centroid.manh_dist(other_pieces_centroid)
                 
                 # self.state.print()
                 # print(self.action, (f0, f1, f2, f3, f4))
-                return (f0, f1, f2, f3)
+                return (ft, f0, f1, f2, f3)
 
 
         return minimax_decision(Minimax_Node(self.board), 3)

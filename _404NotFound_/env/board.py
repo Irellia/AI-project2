@@ -117,9 +117,9 @@ class Board:
                     while queue:
                         pos = queue.pop()
                         if self.get_color(pos.x, pos.y) == Color.white:
-                            black += self.get_num(pos.x, pos.y)
-                        else:
                             white += self.get_num(pos.x, pos.y)
+                        else:
+                            black += self.get_num(pos.x, pos.y)
 
                         for neighbour in pos.neighbour():
                             if not mark[neighbour.y*BOARD_LEN+neighbour.x]:
