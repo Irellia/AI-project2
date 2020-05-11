@@ -29,6 +29,14 @@ def minimax_decision(init_node, depth, state_values):
     res = None
     a = None
     for node in init_node.successors(MMStage.max_stage):
+        if node.cutoff():
+            return node.action
+        if tuple(node.state.cells) in state_values:
+            v = state_values[tuple(node.state.cells)]
+            if v > 0.7:
+                return node.action
+            elif v < 0.3:
+                continue
         node_value = minimax_min(node, a, None, depth-1, state_values)
         if not a or node_value > a:
             a = node_value
