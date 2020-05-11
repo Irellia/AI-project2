@@ -88,7 +88,7 @@ class Board:
         return [(Pos(x, y), self.get_num(x, y)) for x in range(BOARD_LEN) for y in range(BOARD_LEN) if self.is_color(x, y, color)]
 
     # Get the Pos of all pieces that will be influenced by the boom action
-    # return {Color.white:[<pieces>], Color.black:[<pieces>]}
+    # return [<pieces>]
     def get_boom(self, x, y):
         boom = []
         queue = [Pos(x, y)]
@@ -104,6 +104,7 @@ class Board:
                         queue.append(neighbour)
         return boom
 
+    # return {Color.white:[<pieces>], Color.black:[<pieces>]}
     def get_boom_component(self):
         mark = [False for i in range(BOARD_LEN ** 2)]
         boom_component = {Color.white:[], Color.black:[]}
@@ -156,13 +157,14 @@ class Board:
     # return a iterable of (<board>, <action>)
     def all_possible_states(self, color):
         pieces = self.get_pieces(color)
-        other_pieces = self.get_pieces(opposite(color))
+        # other_pieces = self.get_pieces(opposite(color))
 
-        other_pieces_num = sum(stack[1] for stack in other_pieces)
-        other_pieces_centroid = reduce(
-            lambda x, y: x+y, (stack[0] for stack in other_pieces))/other_pieces_num if other_pieces else Pos(3.5, 3.5)
+        # other_pieces_num = sum(stack[1] for stack in other_pieces)
+        # other_pieces_centroid = reduce(
+        #     lambda x, y: x+y, (stack[0] for stack in other_pieces))/other_pieces_num if other_pieces else Pos(3.5, 3.5)
         #consider the frontier pieces first
-        pieces.sort(key=lambda x: x[0].manh_dist(other_pieces_centroid))
+        # pieces.sort(key=lambda x: x[0].manh_dist(other_pieces_centroid))
+
         # find possible boom actions
         for pos, num in pieces:
             # ignore entirely friendly fire
@@ -171,7 +173,8 @@ class Board:
                 a = ("BOOM", (pos.x, pos.y))
                 s = self.apply_action(a)
                 yield (s, a)
-            
+        move_list = []
+        for pos, num in pieces:
             # find possible move actions
             for _p in pos.card_neighbour(num):
                 # ignore moving onto opposite color pieces
@@ -180,8 +183,33 @@ class Board:
                 # generate next state
                 for _n in range(1, num+1):
                     a = ("MOVE", _n, (pos.x, pos.y), (_p.x, _p.y))
-                    s = self.apply_action(a)
-                    yield (s, a)            
+                    move_list.append(a)
+
+        map = [0 for i in range(BOARD_LEN**2)]
+        for x in range(BOARD_LEN):
+             for y in range(BOARD_LEN):
+                count = 0
+                for neighbour in Pos(x, y).neighbour():
+                    if self.get_color(neighbour.x, neighbour.y) == opposite(color):
+                        count += 1
+                map[y*BOARD_LEN + x] = count
+
+        def _sort_func(action):
+            _n = action[1]
+            _from = action[2]
+            _to = action[3]
+            threat = map[_from[0] + _from[1]*BOARD_LEN] - map[_to[0] + _to[1]*BOARD_LEN]
+            threat = threat if threat > 0 else 0
+            # print(threat)
+            reward = map[_to[0] + _to[1]*BOARD_LEN] - self.get_num(_to[0], _to[1]) - _n
+            reward = reward if reward > 0 else 0
+            # print(reward)
+            return  - (reward if reward > threat else threat)
+
+        move_list.sort(key = _sort_func)
+        for a in move_list:
+            s = self.apply_action(a)
+            yield (s, a)
 
 
     """ print functions """

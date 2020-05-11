@@ -53,13 +53,10 @@ class Player:
                 self_pieces_num = sum(stack[1] for stack in self_pieces)
                 other_pieces_num = sum(stack[1] for stack in other_pieces)
 
-                self_pieces_centroid = reduce(lambda x, y: x+y, (stack[0] for stack in self_pieces))/self_pieces_num if self_pieces else Pos(3.5, 3.5)
-                other_pieces_centroid = reduce(lambda x, y: x+y, (stack[0] for stack in other_pieces))/other_pieces_num if other_pieces else Pos(3.5, 3.5)                
-
                 explore_area = set()
                 for pos, num in self_pieces:
                     for _p in pos.card_neighbour(num):
-                        if self.state.get_color(_p.x, _p.y) == Color.none:
+                        if self.state.get_color(_p.x, _p.y) != color:
                             explore_area.add(_p)
 
                 boom_component = self.state.get_boom_component()
@@ -71,22 +68,23 @@ class Player:
                         boom_reward.append(delta)
                     else:
                         boom_penalty.append(-delta)
-                ft = self_pieces_num/other_pieces_num if other_pieces_num != 0 else 999
-                if other_pieces_num - (max(boom_reward) if boom_reward else 0) == 0:
-                    f0 = 999
+
+                ft = self_pieces_num/0.01 if (other_pieces_num == 0) else self_pieces_num/other_pieces_num
+                if other_pieces_num - sum(boom_reward) == 0:
+                    f0 = (self_pieces_num - sum(boom_penalty)) / 0.01
                 else:
-                    f0 = (self_pieces_num - (max(boom_penalty) if boom_penalty else 0)) /\
-                        (other_pieces_num - (max(boom_reward) if boom_reward else 0))
-                f1 = sum(boom_reward) - sum(boom_penalty)
-                f2 = len(explore_area)
-                f3 = -self_pieces_centroid.manh_dist(other_pieces_centroid)
+                    f0 = (self_pieces_num - sum(boom_penalty)) / (other_pieces_num - sum(boom_reward))
+                f2 = len(explore_area)-len(self_pieces)
+                f3 = -sum(num*sum(_n*_p.manh_dist(pos) for _p,_n in self_pieces) for pos,num in other_pieces)
                 
                 # self.state.print()
                 # print(self.action, (f0, f1, f2, f3, f4))
-                return (ft, f0, f1, f2, f3)
-
-
-        return minimax_decision(Minimax_Node(self.board), 3)
+                return (ft,f0, f2, f3)
+        
+        if self.explore_stage():
+            return minimax_decision(Minimax_Node(self.board), 1)
+        else:
+            return minimax_decision(Minimax_Node(self.board), 3)
 
 
     def update(self, colour, action):
@@ -108,3 +106,19 @@ class Player:
         against the game rules).
         """
         self.board = self.board.apply_action(action)
+
+    def explore_stage(self):
+        color = self.color
+        self_pieces = self.board.get_pieces(color)
+        other_pieces = self.board.get_pieces(opposite(color))
+        for pos, num in self_pieces:
+            for _p in pos.card_neighbour(num):
+                for _op in pos.neighbour():
+                    if self.board.get_color(_op.x, _op.y) == opposite(color):
+                        return False
+        for pos, num in other_pieces:
+            for _p in pos.card_neighbour(num):
+                for _op in pos.neighbour():
+                    if self.board.get_color(_op.x, _op.y) == color:
+                        return False
+        return True
