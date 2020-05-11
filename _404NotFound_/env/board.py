@@ -165,4 +165,3 @@ class Board:
                 else:
                     print_dict[(x, y)] = ""            
         print_board(print_dict, "Board status", True)
-

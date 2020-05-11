@@ -39,9 +39,9 @@ def minimax_max(node, a, b, depth, state_values):
 
     if tuple(node.state.cells) in state_values:
         v = state_values[tuple(node.state.cells)]
-        if v > 0.8:
+        if v > 0.7:
             return 13, v
-        elif v < 0.2:
+        elif v < 0.3:
             return -1, v
 
     if depth == 0 or node.cutoff():
@@ -59,9 +59,9 @@ def minimax_min(node, a, b, depth, state_values):
 
     if tuple(node.state.cells) in state_values:
         v = state_values[tuple(node.state.cells)]
-        if v > 0.8:
+        if v > 0.7:
             return 13, v
-        elif v < 0.2:
+        elif v < 0.3:
             return -1, v
 
     if depth == 0 or node.cutoff():

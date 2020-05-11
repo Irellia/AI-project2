@@ -65,15 +65,15 @@ class Player:
                             explore_area.add(_p)
 
                 f0 = self_pieces_num - other_pieces_num
-                f1 = float(len(explore_area))/64
-                f2 = 12 - other_pieces_num
+                f1 = 12 - other_pieces_num
+                f2 = float(len(explore_area)) / 64
                 f3 = -len(self_pieces)
                 f4 = -self_pieces_centroid.manh_dist(other_pieces_centroid)
 
                 # output = [f2, f3, f4]
                 # np.random.shuffle(output)
                 # return tuple([f0]+[f1]+output)
-                return f0, f1, f2, f3, f4
+                return f0, f2, f3, f4
         return minimax_decision(Minimax_Node(self.board), 3, self.state_values)
 
 

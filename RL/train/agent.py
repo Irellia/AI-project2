@@ -7,12 +7,15 @@ from timeit import default_timer as time
 class Agent(player.Player):
     def __init__(self, color):
         super().__init__(color)
-        self.lr = 0.2
+        self.lr = 0.5
         self.history = []
 
     def add_state_value(self, v):
         if v[0] not in self.state_values:
             self.state_values[v[0]] = v[1]
+
+    def set_state_values(self, vs):
+        self.state_values = vs
 
     def add_history(self, h):
         self.history.append(h)
@@ -69,6 +72,7 @@ def play_game(p1, p2, referee, plot=False):
         p2.update(current_player.color, action)
 
         state = tuple(current_player.board.cells)
+
         p1.add_history(state)
         p2.add_history(state)
 
@@ -86,9 +90,15 @@ def play_game(p1, p2, referee, plot=False):
 
     # current_player.board.print()
 
-def self_train(instance=5000, filename="", save_model=1):
+def self_train(instance=5000, filename_in="", filename_out="", save_model=1):
     p1 = Agent('white')
     p2 = Agent('black')
+
+    if filename_in:
+        with open(filename_in, "rb") as f:
+            state_values_1, state_values_2 = pickle.load(f)
+            p1.set_state_values(state_values_1)
+            p2.set_state_values(state_values_2)
 
     for t in range(instance):
         if t % 10 == 0:
@@ -96,7 +106,7 @@ def self_train(instance=5000, filename="", save_model=1):
         play_game(p1, p2, Referee())
 
     if save_model:
-        with open(filename, 'wb') as f:
+        with open(filename_out, 'wb') as f:
             # pickle.dump([p1, p2], f)
             pickle.dump([p1.state_values, p2.state_values], f)
 
@@ -112,8 +122,10 @@ def play_with_human(human_first, agent_name="Agents_N_4000_lr=05.pickle"):
             play_game(p1, h, Referee(), plot=human_first)
 
 if __name__ == "__main__":
-    self_train(instance=100, filename="100_lr=02.pickle")
-    # state_values_1, state_values_2 = pickle.load(open("100_lr=02.pickle", "rb"))
+    self_train(instance=40, filename_in="10_lr=05_eval01234.pickle", filename_out="50_lr=05.pickle")
+    # with open("10_lr=05.pickle", "rb") as f:
+    #     state_values_1, state_values_2 = pickle.load(f)
+    #
     # print(state_values_1)
     # print(state_values_2)
     # print(p1.state_values)
