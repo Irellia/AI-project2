@@ -42,7 +42,7 @@ class Referee:
     def game_over(self, board):
         white_num = board.get_white()
         black_num = board.get_black()
-        if (not white_num and not black_num) or (time() - self.timer > 80):
+        if (not white_num and not black_num) or (time() - self.timer > 120):
             return True
         elif not white_num:
             self.winner = Color.black
@@ -121,11 +121,32 @@ def play_with_human(human_first, agent_name="Agents_N_4000_lr=05.pickle"):
         while True:
             play_game(p1, h, Referee(), plot=human_first)
 
+# def generate_all_possible_winning_states(env, i=0):
+#     results = []
+#
+#     for v in range(-12, 13):
+#         cell = env.board.get_p(Pos(i, j))
+#         cell.chess = num_stack[v]
+#         if v != 0:
+#             cell.num = v - (cell.chess.value-1)*12
+#
+#         if j == 63:
+#             if i == BOARD_LEN-1:
+#                 if env.board.is_valid():
+#                     state = env.get_state()
+#                     ended = env.game_over()
+#                     results.append((state, env.winner, ended))
+#             else:
+#                 results += generate_all_possible_winning_states(env, i+1, 0)
+#         else:
+#             results += generate_all_possible_winning_states(env, i, j+1)
+#     return results
+
 if __name__ == "__main__":
-    self_train(instance=40, filename_in="10_lr=05_eval01234.pickle", filename_out="50_lr=05.pickle")
-    # with open("10_lr=05.pickle", "rb") as f:
-    #     state_values_1, state_values_2 = pickle.load(f)
-    #
-    # print(state_values_1)
-    # print(state_values_2)
+    # self_train(instance=40, filename_in="10_lr=05_eval01234.pickle", filename_out="50_lr=05.pickle")
+    with open("10_lr=05_eval01234.pickle", "rb") as f:
+        state_values_1, state_values_2 = pickle.load(f)
+
+    print(state_values_1)
+    print(state_values_2)
     # print(p1.state_values)
