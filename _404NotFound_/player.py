@@ -32,6 +32,8 @@ class Player:
         """
         self.round += 1
         color = self.color
+
+        # our main minimax strategy
         class Minimax_Node(Node):
 
             def __init__(self, board, action=None):
@@ -61,33 +63,35 @@ class Player:
                         if self.state.get_color(_p.x, _p.y) != color:
                             explore_area.add(_p)
 
-                boom_component = self.state.get_boom_component()
                 boom_reward = []
                 boom_penalty = []
+                boom_component = self.state.get_boom_component()
                 for i in range(len(boom_component[Color.white])):
-                    delta = self_pieces_num/other_pieces_num * boom_component[opposite(color)][i] - boom_component[color][i]
+                    delta = boom_component[opposite(color)][i] - boom_component[color][i]
                     if delta > 0:
                         boom_reward.append(delta)
                     else:
                         boom_penalty.append(-delta)
-
-                ft = self_pieces_num/0.01 if (other_pieces_num == 0) else self_pieces_num/other_pieces_num
+                # the ratio between our pieces number and other pieces number
+                f0 = self_pieces_num/0.01 if (other_pieces_num == 0) else self_pieces_num/other_pieces_num
+                # the ratio including the pieces that is about to be killed
                 if other_pieces_num - sum(boom_reward) == 0:
-                    f0 = (self_pieces_num - sum(boom_penalty)) / 0.01
+                    f1 = (self_pieces_num - sum(boom_penalty)) / 0.01
                 else:
-                    f0 = (self_pieces_num - sum(boom_penalty)) / (other_pieces_num - sum(boom_reward))
+                    f1 = (self_pieces_num - sum(boom_penalty)) / (other_pieces_num - sum(boom_reward))
+                # the number of unexplored block minus number of our stacks
                 f2 = len(explore_area)-len(self_pieces)
+                # the overall distance between our pieces and the opponent's pieces
                 f3 = -sum(num*sum(_n*_p.manh_dist(pos) for _p,_n in self_pieces) for pos,num in other_pieces)
                 
-                # self.state.print()
-                # print(self.action, (f0, f1, f2, f3, f4))
-                return (ft,f0, f2, f3)
-        
+                return (f0, f1, f2, f3)
+        # start move
         if self.round <= 1:
             if self.color == Color.white:
                 return ('MOVE', 1, (3, 0), (3, 1))
             else:
                 return ('MOVE', 1, (3, 7), (3, 6))
+        
         else:
             if self.explore_stage():
                 return minimax_decision(Minimax_Node(self.board), 1)
@@ -115,6 +119,8 @@ class Player:
         """
         self.board = self.board.apply_action(action)
 
+    # if we cannot reach any opponent pieces in 2 step or
+    # our opponent can not reach us either, we are in exploring stage
     def explore_stage(self):
         color = self.color
         self_pieces = self.board.get_pieces(color)
@@ -125,7 +131,7 @@ class Player:
                     if self.board.get_color(_op.x, _op.y) == opposite(color):
                         return False
         for pos, num in other_pieces:
-            for _p in pos.card_neighbour(num*2):
+            for _p in pos.card_neighbour(num):
                 for _op in _p.neighbour():
                     if self.board.get_color(_op.x, _op.y) == color:
                         return False

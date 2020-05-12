@@ -22,6 +22,12 @@ def opposite(color):
         return Color.black
     return Color.none
 
+
+board_init_state = {
+    "white": [[1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1], [1, 3, 0], [1, 3, 1], [1, 4, 0], [1, 4, 1], [1, 6, 0], [1, 6, 1], [1, 7, 0], [1, 7, 1]],
+    "black": [[1, 0, 6], [1, 0, 7], [1, 1, 6], [1, 1, 7], [1, 3, 6], [1, 3, 7], [1, 4, 6], [1, 4, 7], [1, 6, 6], [1, 6, 7], [1, 7, 6], [1, 7, 7]]
+}
+
 class Board:
     """ constructors """
     # board representation:
@@ -31,13 +37,12 @@ class Board:
     # <0 for black pieces
     def __init__(self, reset=False):
         if reset: 
-            with open("_404NotFound_/env/init_state.json") as file:
-                self.cells = [0 for i in range(BOARD_LEN ** 2)]
-                data = json.load(file)
-                for stack in data["white"]:
-                    self.cells[stack[2] * BOARD_LEN + stack[1]] = stack[0]                    
-                for stack in data["black"]:
-                    self.cells[stack[2] * BOARD_LEN + stack[1]] = -stack[0]
+            data = board_init_state
+            self.cells = [0 for i in range(BOARD_LEN ** 2)]
+            for stack in data["white"]:
+                self.cells[stack[2] * BOARD_LEN + stack[1]] = stack[0]                    
+            for stack in data["black"]:
+                self.cells[stack[2] * BOARD_LEN + stack[1]] = -stack[0]
 
     def copy(self):
         new = Board()
@@ -104,6 +109,8 @@ class Board:
                         queue.append(neighbour)
         return boom
 
+    # for each connected component of peices(all would be killed in one boom)
+    # push the number of whites and blacks into correspoding list
     # return {Color.white:[<pieces>], Color.black:[<pieces>]}
     def get_boom_component(self):
         mark = [False for i in range(BOARD_LEN ** 2)]
@@ -179,7 +186,7 @@ class Board:
                 for _n in range(1, num+1):
                     a = ("MOVE", _n, (pos.x, pos.y), (_p.x, _p.y))
                     move_list.append((a, (d-1)/num))
-
+        # generate a map of number of adjacent opponent pieces
         map = [0 for i in range(BOARD_LEN**2)]
         for x in range(BOARD_LEN):
              for y in range(BOARD_LEN):
@@ -188,7 +195,7 @@ class Board:
                     if self.get_color(neighbour.x, neighbour.y) == opposite(color):
                         count += 1
                 map[y*BOARD_LEN + x] = count
-
+        # sort the move action by (steps to reach a opponent pieces, whether in danger or threat to opponent)
         def _sort_func(pair):
             action = pair[0]
             _d = pair[1]
@@ -204,6 +211,8 @@ class Board:
             return (_d, - (reward if reward > threat else threat))
 
         move_list.sort(key = _sort_func)
+
+        # generate next state
         for a,d in move_list:
             s = self.apply_action(a)
             yield (s, a)

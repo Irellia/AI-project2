@@ -7,11 +7,12 @@ class MMStage(Enum):
 
 
 class Node:
+    # a node should consits of a state and the an action leading to that state 
     def __init__(self, state, action=None):
         self.state = state
         self.action = action
 
-    # return a iterable of successor nodes
+    # takes a MMStage, return a iterable of successor nodes
     def successors(self, minimax_stage):
         pass
 
@@ -26,7 +27,7 @@ class Node:
     def __lt__(self, other):
         return self.evaluation() < other.evaluation()
 
-
+# the public method to decide which action to take
 def minimax_decision(init_node, depth):
     res = None
     a = None
@@ -42,7 +43,6 @@ def minimax_max(node, a, b, depth):
     if depth == 0 or node.cutoff():
         return node.evaluation()
     for successor in node.successors(MMStage.max_stage):
-        #print(successor.action)
         min_value = minimax_min(successor, a, b, depth-1)
         a = max(a, min_value) if a else min_value
         if b and a >= b:
@@ -54,7 +54,6 @@ def minimax_min(node, a, b, depth):
     if depth == 0 or node.cutoff():
         return node.evaluation()
     for successor in node.successors(MMStage.min_stage):
-        #print(successor.action)
         max_value = minimax_max(successor, a, b, depth-1)
         b = min(b, max_value) if b else max_value
         if a and b <= a:
