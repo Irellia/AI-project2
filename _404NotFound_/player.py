@@ -63,23 +63,21 @@ class Player:
                 boom_reward = []
                 boom_penalty = []
                 for i in range(len(boom_component[Color.white])):
-                    delta = self_pieces_num/other_pieces_num * boom_component[opposite(color)][i] - boom_component[color][i]
+                    delta = boom_component[opposite(color)][i] - boom_component[color][i]
                     if delta > 0:
                         boom_reward.append(delta)
                     else:
                         boom_penalty.append(-delta)
 
-                ft = self_pieces_num/0.01 if (other_pieces_num == 0) else self_pieces_num/other_pieces_num
+                f0 = self_pieces_num/0.01 if (other_pieces_num == 0) else self_pieces_num/other_pieces_num
                 if other_pieces_num - sum(boom_reward) == 0:
-                    f0 = (self_pieces_num - sum(boom_penalty)) / 0.01
+                    f1 = (self_pieces_num - sum(boom_penalty)) / 0.01
                 else:
-                    f0 = (self_pieces_num - sum(boom_penalty)) / (other_pieces_num - sum(boom_reward))
+                    f1 = (self_pieces_num - sum(boom_penalty)) / (other_pieces_num - sum(boom_reward))
                 f2 = len(explore_area)-len(self_pieces)
                 f3 = -sum(num*sum(_n*_p.manh_dist(pos) for _p,_n in self_pieces) for pos,num in other_pieces)
                 
-                # self.state.print()
-                # print(self.action, (f0, f1, f2, f3, f4))
-                return (ft,f0, f2, f3)
+                return (f0, f1, f2, f3)
         
         if self.explore_stage():
             return minimax_decision(Minimax_Node(self.board), 1)
@@ -112,13 +110,13 @@ class Player:
         self_pieces = self.board.get_pieces(color)
         other_pieces = self.board.get_pieces(opposite(color))
         for pos, num in self_pieces:
-            for _p in pos.card_neighbour(num):
-                for _op in pos.neighbour():
+            for _p in pos.card_neighbour(num*2):
+                for _op in _p.neighbour():
                     if self.board.get_color(_op.x, _op.y) == opposite(color):
                         return False
         for pos, num in other_pieces:
             for _p in pos.card_neighbour(num):
-                for _op in pos.neighbour():
+                for _op in _p.neighbour():
                     if self.board.get_color(_op.x, _op.y) == color:
                         return False
         return True

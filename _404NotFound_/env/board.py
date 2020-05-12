@@ -157,13 +157,6 @@ class Board:
     # return a iterable of (<board>, <action>)
     def all_possible_states(self, color):
         pieces = self.get_pieces(color)
-        # other_pieces = self.get_pieces(opposite(color))
-
-        # other_pieces_num = sum(stack[1] for stack in other_pieces)
-        # other_pieces_centroid = reduce(
-        #     lambda x, y: x+y, (stack[0] for stack in other_pieces))/other_pieces_num if other_pieces else Pos(3.5, 3.5)
-        #consider the frontier pieces first
-        # pieces.sort(key=lambda x: x[0].manh_dist(other_pieces_centroid))
 
         # find possible boom actions
         for pos, num in pieces:
@@ -200,10 +193,8 @@ class Board:
             _to = action[3]
             threat = map[_from[0] + _from[1]*BOARD_LEN] - map[_to[0] + _to[1]*BOARD_LEN]
             threat = threat if threat > 0 else 0
-            # print(threat)
             reward = map[_to[0] + _to[1]*BOARD_LEN] - self.get_num(_to[0], _to[1]) - _n
             reward = reward if reward > 0 else 0
-            # print(reward)
             return  - (reward if reward > threat else threat)
 
         move_list.sort(key = _sort_func)
