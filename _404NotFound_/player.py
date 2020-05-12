@@ -17,6 +17,7 @@ class Player:
         program will play as (White or Black). The value will be one of the 
         strings "white" or "black" correspondingly.
         """
+        self.round = 0
         self.color = Color.white if colour == "white" else Color.black
         self.board = Board(True)
 
@@ -29,6 +30,7 @@ class Player:
         return an allowed action to play on this turn. The action must be
         represented based on the spec's instructions for representing actions.
         """
+        self.round += 1
         color = self.color
         class Minimax_Node(Node):
 
@@ -81,10 +83,16 @@ class Player:
                 # print(self.action, (f0, f1, f2, f3, f4))
                 return (ft,f0, f2, f3)
         
-        if self.explore_stage():
-            return minimax_decision(Minimax_Node(self.board), 1)
+        if self.round <= 1:
+            if self.color == Color.white:
+                return ('MOVE', 1, (3, 0), (3, 1))
+            else:
+                return ('MOVE', 1, (3, 7), (3, 6))
         else:
-            return minimax_decision(Minimax_Node(self.board), 3)
+            if self.explore_stage():
+                return minimax_decision(Minimax_Node(self.board), 1)
+            else:
+                return minimax_decision(Minimax_Node(self.board), 3)
 
 
     def update(self, colour, action):
@@ -112,13 +120,13 @@ class Player:
         self_pieces = self.board.get_pieces(color)
         other_pieces = self.board.get_pieces(opposite(color))
         for pos, num in self_pieces:
-            for _p in pos.card_neighbour(num):
-                for _op in pos.neighbour():
+            for _p in pos.card_neighbour(num*2):
+                for _op in _p.neighbour():
                     if self.board.get_color(_op.x, _op.y) == opposite(color):
                         return False
         for pos, num in other_pieces:
-            for _p in pos.card_neighbour(num):
-                for _op in pos.neighbour():
+            for _p in pos.card_neighbour(num*2):
+                for _op in _p.neighbour():
                     if self.board.get_color(_op.x, _op.y) == color:
                         return False
         return True
